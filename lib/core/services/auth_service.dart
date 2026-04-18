@@ -22,25 +22,39 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final cred = await _auth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+    try {
+      final cred = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-    await _db.collection("users").doc(cred.user!.uid).set({
-      "firstName": firstName,
-      "LastName": lastName,
-      "dob": dob.toString().split(" ")[0],
-      "email": email,
-    });
+      await _db.collection("users").doc(cred.user!.uid).set({
+        "firstName": firstName,
+        "lastName": lastName,
+        "dob": dob.toString().split(" ")[0],
+        "email": email.trim(),
+      });
+    } on FirebaseAuthException catch (e) {
+      throw Exception(e.message);
+    }
   }
 
   Future<void> login(String email, String password) async {
-    await _auth.signInWithEmailAndPassword(email: email, password: password);
+    try {
+      await _auth.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+    } on FirebaseAuthException catch (e) {
+      throw Exception(e.message);
+    }
   }
 
   Future<Map<String, dynamic>> getProfile(String uid) async {
     final doc = await _db.collection("users").doc(uid).get();
+    if (!doc.exists) {
+      throw Exception("User not found");
+    }
     return doc.data()!;
   }
 
@@ -48,12 +62,11 @@ class AuthService {
     await _auth.signOut();
   }
 
-
   Future<void> resetPassword(String email) async {
     try {
-      await _auth.sendPasswordResetEmail(email: email);
-    } catch (e) {
-      throw Exception("Erreur lors de l'envoi de l'email : $e");
+      await _auth.sendPasswordResetEmail(email: email.trim());
+    } on FirebaseAuthException catch (e) {
+      throw Exception(e.message);
     }
   }
 

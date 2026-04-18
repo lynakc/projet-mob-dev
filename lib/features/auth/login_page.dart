@@ -15,20 +15,24 @@ class _LoginPageState extends State<LoginPage> {
   final service = AuthService();
 
   void login() async {
-    if (!service.isValidEmail(loginEmail.text)) {
-      showMsg("Email invalide");
-      return;
-    }
+    try {
+      if (!service.isValidEmail(loginEmail.text)) {
+        showMsg("Email invalide");
+        return;
+      }
 
-    if (loginPwd.text.isEmpty) {
-      showMsg("Insert Password");
-      return;
-    }
+      if (loginPwd.text.isEmpty) {
+        showMsg("Insert Password");
+        return;
+      }
 
-    await service.login(
-      loginEmail.text,
-      loginPwd.text,
-    );
+      await service.login(
+        loginEmail.text,
+        loginPwd.text,
+      );
+    } catch (e) {
+      showMsg(e.toString());
+    }
   }
 
   void showMsg(String msg) {
@@ -62,7 +66,7 @@ class _LoginPageState extends State<LoginPage> {
               onPressed: () {
                 Navigator.pushNamed(context, '/reset-password');
               },
-              child: const Text("Mot de passe oublié ?"),
+              child: const Text("Forgot password ?"),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
