@@ -20,47 +20,50 @@ class _SignupPageState extends State<SignupPage> {
 
   DateTime? dob;
   void signup() async {
-    if(firstName.text.isEmpty
-        || lastName.text.isEmpty
-        || email.text.isEmpty) {
-      showMsg("Insert all fields");
-      return;
+    try {
+      if(firstName.text.isEmpty
+          || lastName.text.isEmpty
+          || email.text.isEmpty) {
+        showMsg("Insert all fields");
+        return;
+      }
+
+      if(password.text.length < 6){
+        showMsg("Weak Password, use at least 6 characters");
+        return;
+      }
+
+      if(dob == null) {
+        showMsg("Select date of birth");
+        return;
+      }
+
+      if(!service.isAtLeast13(dob!)) {
+        showMsg("Must be 13+");
+        return;
+      }
+
+      if(email.text != confirmEmail.text) {
+        showMsg("Emails do not match");
+        return;
+      }
+
+      if(password.text != confirmPassword.text) {
+        showMsg("Passwords do not match");
+        return;
+      }
+
+      await service.signup(
+        firstName: firstName.text,
+        lastName: lastName.text,
+        dob: dob!,
+        email: email.text,
+        password: password.text,
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      showMsg(e.toString());
     }
-
-    if(password.text.length < 6){
-      showMsg("Weak Password, use at least 6 characters");
-      return;
-    }
-
-    if(dob == null) {
-      showMsg("Select date of birth");
-      return;
-    }
-
-    if(!service.isAtLeast13(dob!)) {
-      showMsg("Must be 13+");
-      return;
-    }
-
-    if(email.text != confirmEmail.text) {
-      showMsg("Emails do not match");
-      return;
-    }
-
-    if(password.text != confirmPassword.text) {
-      showMsg("Passwords do not match");
-      return;
-    }
-
-    await service.signup(
-      firstName: firstName.text,
-      lastName: lastName.text,
-      dob: dob!,
-      email: email.text,
-      password: password.text,
-    );
-
-    Navigator.pop(context);
   }
 
   void pickDate() async {
