@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/services/favorites_service.dart';
+import '../../core/models/audio_model.dart';
 
 class FavoritesPage extends StatelessWidget {
   FavoritesPage({super.key});
@@ -8,6 +9,13 @@ class FavoritesPage extends StatelessWidget {
   final FavoritesService favService = FavoritesService();
 
   @override
+  Future<bool> confirmDeletion(BuildContext context) async {
+    // 🔴 TEMPORAIRE (en attendant Personne A)
+    return true;
+
+    // 🟢 FUTUR (Personne A)
+    // return await BiometricService().authenticate();
+  }
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -39,21 +47,38 @@ class FavoritesPage extends StatelessWidget {
             itemCount: docs.length,
             itemBuilder: (context, index) {
               final fav = docs[index];
-              final title = fav['title'];
+
+              final titleAr = fav['titleAr'];
+              final titleEn = fav['titleEn'];
+              final url = fav['url'];
 
               return ListTile(
-                title: Text(title),
+                title: Text(titleEn),
+                subtitle: Text(titleAr),
 
                 trailing: IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
                   onPressed: () async {
-                    await favService.removeFavorite(title);
+                    final ok = await confirmDeletion(context);
+
+                    if (ok) {
+                      await favService.removeFavorite(
+                        AudioModel(
+                          titleAr: titleAr,
+                          titleEn: titleEn,
+                          url: url,
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Authentication required")),
+                      );
+                    }
                   },
                 ),
 
                 onTap: () {
-                  print("Play favorite: $title");
-                  // plus tard → connecter au player
+                  print("Play: $url"); // 🔥 prêt pour player
                 },
               );
             },

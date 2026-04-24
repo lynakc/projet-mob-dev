@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/api_services.dart';
+import '../../core/services/favorites_service.dart';
 import '../../core/models/audio_model.dart';
 import '../../core/models/reciter_model.dart';
 
@@ -11,6 +12,7 @@ class SurahsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final api = ApiService();
+    final favService = FavoritesService();
 
     return Scaffold(
       appBar: AppBar(
@@ -48,7 +50,26 @@ class SurahsPage extends StatelessWidget {
                 title: Text(audio.titleEn),
                 subtitle: Text(audio.titleAr),
 
-                trailing: const Icon(Icons.favorite_border),
+                trailing: StreamBuilder<bool>(
+                  stream: favService.isFavorite(audio),
+                  builder: (context, snapshot) {
+                    final isFav = snapshot.data ?? false;
+
+                    return IconButton(
+                      icon: Icon(
+                        isFav ? Icons.favorite : Icons.favorite_border,
+                        color: isFav ? Colors.red : null,
+                      ),
+                      onPressed: () async {
+                        if (isFav) {
+                          await FavoritesService().removeFavorite(audio);
+                        } else {
+                          await favService.addFavorite(audio);
+                        }
+                      },
+                    );
+                  },
+                ),
 
                 onTap: () {
                   print(audio.url); // 🔥 DOIT afficher URL
