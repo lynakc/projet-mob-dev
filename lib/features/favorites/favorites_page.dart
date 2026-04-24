@@ -24,19 +24,17 @@ class FavoritesPage extends StatelessWidget {
       body: StreamBuilder<QuerySnapshot>(
         stream: FavoritesService().getFavorites(),
         builder: (context, snapshot) {
-          // loading
+
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // error
           if (snapshot.hasError) {
             return const Center(child: Text("Error loading favorites"));
           }
 
           final docs = snapshot.data!.docs;
 
-          // empty
           if (docs.isEmpty) {
             return const Center(
               child: Text("No favorites yet"),
@@ -51,10 +49,11 @@ class FavoritesPage extends StatelessWidget {
               final titleAr = fav['titleAr'];
               final titleEn = fav['titleEn'];
               final url = fav['url'];
+              final reciter = fav['reciter'];
 
               return ListTile(
                 title: Text(titleEn),
-                subtitle: Text(titleAr),
+                subtitle: Text("$titleAr • $reciter"),
 
                 trailing: IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
@@ -67,6 +66,7 @@ class FavoritesPage extends StatelessWidget {
                           titleAr: titleAr,
                           titleEn: titleEn,
                           url: url,
+                          reciter: reciter,
                         ),
                       );
                     } else {

@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:projetmobdev/features/player/reciters_page.dart';
 import '../../core/services/auth_service.dart';
 import '../favorites/favorites_page.dart';
+import '../player/surahs_global_page.dart';
+
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -70,6 +72,15 @@ class ProfilePage extends StatelessWidget {
                     );
                   },
                   child: const Text("Reciters"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => SurahsGlobalPage()),
+                    );
+                  },
+                  child: const Text("Surahs"),
                 ),
               ],
             ),

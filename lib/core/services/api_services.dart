@@ -6,7 +6,6 @@ import '../models/surah_model.dart';
 
 class ApiService {
 
-  // 📀 Surahs (infos seulement)
   Future<List<Surah>> fetchSurahs() async {
     final response = await http.get(
       Uri.parse("https://quran.yousefheiba.com/api/surahs"),
@@ -23,7 +22,6 @@ class ApiService {
     }
   }
 
-  // 🎤 Reciters
   Future<List<Reciter>> fetchReciters() async {
     final response = await http.get(
       Uri.parse("https://quran.yousefheiba.com/api/reciters"),
@@ -39,15 +37,12 @@ class ApiService {
     }
   }
 
-  // 🎧 Audios (IMPORTANT 🔥)
   Future<List<AudioModel>> fetchAudioByReciter(int reciterId) async {
 
-    // 🔹 récupérer noms anglais
     final surahResponse = await http.get(
       Uri.parse("https://quran.yousefheiba.com/api/surahs"),
     );
 
-    // 🔹 récupérer audio
     final audioResponse = await http.get(
       Uri.parse("https://quran.yousefheiba.com/api/reciterAudio?reciter_id=$reciterId"),
     );
@@ -60,9 +55,8 @@ class ApiService {
 
       return audioList.map<AudioModel>((audio) {
 
-        // 🔍 trouver correspondance par ID
         final surah = surahs.firstWhere(
-              (s) => s['id'] == audio['surah_id'],
+          (s) => s['id'] == audio['surah_id'],
           orElse: () => null,
         );
 
@@ -70,6 +64,7 @@ class ApiService {
           titleAr: audio['surah_name_ar'],
           titleEn: surah != null ? surah['name_en'] : audio['surah_name_ar'],
           url: audio['audio_url'],
+          reciter: audioJson['reciter_name'],
         );
 
       }).toList();

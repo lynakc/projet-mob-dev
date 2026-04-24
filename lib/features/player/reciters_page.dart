@@ -4,7 +4,14 @@ import '../../core/models/reciter_model.dart';
 import 'surahs_page.dart';
 
 class RecitersPage extends StatefulWidget {
-  const RecitersPage({super.key});
+  final int? surahId;
+  final String? surahName;
+
+  const RecitersPage({
+    super.key,
+    this.surahId,
+    this.surahName,
+  });
 
   @override
   State<RecitersPage> createState() => _RecitersPageState();
@@ -21,12 +28,12 @@ class _RecitersPageState extends State<RecitersPage> {
       body: Column(
         children: [
 
-          // 🔍 Search
           Padding(
             padding: const EdgeInsets.all(8),
             child: TextField(
               decoration: const InputDecoration(
-                hintText: "Search...",
+                hintText: "Search reciter...",
+                prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
               onChanged: (value) {
@@ -35,7 +42,6 @@ class _RecitersPageState extends State<RecitersPage> {
             ),
           ),
 
-          // 📜 List
           Expanded(
             child: FutureBuilder<List<Reciter>>(
               future: api.fetchReciters(),
