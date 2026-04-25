@@ -58,6 +58,12 @@ class _RecitersPageState extends State<RecitersPage> {
                     )
                     .toList();
 
+                if (reciters.isEmpty) {
+                  return const Center(
+                    child: Text("No results found"),
+                  );
+                }
+
                 return ListView.builder(
                   itemCount: reciters.length,
                   itemBuilder: (context, index) {

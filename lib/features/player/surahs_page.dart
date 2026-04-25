@@ -4,7 +4,7 @@ import '../../core/services/favorites_service.dart';
 import '../../core/models/audio_model.dart';
 import '../../core/models/reciter_model.dart';
 
-class SurahsPage extends StatelessWidget {
+class SurahsPage extends StatefulWidget {
   final Reciter reciter;
   final int? surahId;
 
@@ -15,93 +15,113 @@ class SurahsPage extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final api = ApiService();
-    final favService = FavoritesService();
+  State<SurahsPage> createState() => _SurahsPageState();
+}
 
+class _SurahsPageState extends State<SurahsPage> {
+  final ApiService api = ApiService();
+  final FavoritesService favService = FavoritesService();
+  String search = "";
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(reciter.nameEn),
-            Text(
-              reciter.nameAr,
-              style: TextStyle(fontSize: 14),
-            ),
+            Text(widget.reciter.nameEn),
+            Text(widget.reciter.nameAr, style: TextStyle(fontSize: 14)),
           ],
         ),
       ),
-      body: FutureBuilder<List<AudioModel>>(
-        future: api.fetchAudioByReciter(reciter.id),
-        builder: (context, snapshot) {
+      body: Column(
+        children: [
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text(snapshot.error.toString()));
-          }
-
-          final audios = snapshot.data!
-            .where((a) =>
-              surahId == null || a.surahId == surahId)
-            .toList();
-
-          if (audios.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 50, color: Colors.grey),
-                  SizedBox(height: 10),
-                  Text(
-                    "This reciter does not have this surah",
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ],
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: "Search surah...",
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
               ),
-            );
-          }
+              onChanged: (value) {
+                setState(() {
+                  search = value.toLowerCase();
+                });
+              },
+            ),
+          ),
 
-          return ListView.builder(
-            itemCount: audios.length,
-            itemBuilder: (context, index) {
-              final audio = audios[index];
+          Expanded(
+            child: FutureBuilder<List<AudioModel>>(
+              future: api.fetchAudioByReciter(widget.reciter.id),
+              builder: (context, snapshot) {
 
-              return ListTile(
-                title: Text(audio.titleEn),
-                subtitle: Text(audio.titleAr),
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                trailing: StreamBuilder<bool>(
-                  stream: favService.isFavorite(audio),
-                  builder: (context, snapshot) {
-                    final isFav = snapshot.data ?? false;
+                if (snapshot.hasError) {
+                  return Center(child: Text(snapshot.error.toString()));
+                }
 
-                    return IconButton(
-                      icon: Icon(
-                        isFav ? Icons.favorite : Icons.favorite_border,
-                        color: isFav ? Colors.red : null,
+                final audios = snapshot.data!
+                    .where((a) =>
+                (widget.surahId == null || a.surahId == widget.surahId) &&
+                    (a.titleEn.toLowerCase().contains(search) ||
+                        a.titleAr.contains(search)))
+                    .toList();
+
+                if (audios.isEmpty) {
+                  return const Center(
+                    child: Text("No results found"),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: audios.length,
+                  itemBuilder: (context, index) {
+                    final audio = audios[index];
+
+                    return ListTile(
+                      title: Text(audio.titleEn),
+                      subtitle: Text("${audio.titleAr} • ${audio.reciter}"),
+
+                      trailing: StreamBuilder<bool>(
+                        stream: favService.isFavorite(audio),
+                        builder: (context, snapshot) {
+                          final isFav = snapshot.data ?? false;
+
+                          return IconButton(
+                            icon: Icon(
+                              isFav
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              color: isFav ? Colors.red : null,
+                            ),
+                            onPressed: () async {
+                              if (isFav) {
+                                await favService.removeFavorite(audio);
+                              } else {
+                                await favService.addFavorite(audio);
+                              }
+                            },
+                          );
+                        },
                       ),
-                      onPressed: () async {
-                        if (isFav) {
-                          await FavoritesService().removeFavorite(audio);
-                        } else {
-                          await favService.addFavorite(audio);
-                        }
+
+                      onTap: () {
+                        print(audio.url);
                       },
                     );
                   },
-                ),
-
-                onTap: () {
-                  print(audio.url); // 🔥 DOIT afficher URL
-                },
-              );
-            },
-          );
-        },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -56,6 +56,12 @@ class _SurahsGlobalPageState extends State<SurahsGlobalPage> {
                     s.nameAr.toLowerCase().contains(search))
                     .toList();
 
+                if (surahs.isEmpty) {
+                  return const Center(
+                    child: Text("No results found"),
+                  );
+                }
+
                 return ListView.builder(
                   itemCount: surahs.length,
                   itemBuilder: (context, index) {
