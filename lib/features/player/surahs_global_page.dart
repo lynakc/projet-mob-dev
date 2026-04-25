@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/services/api_services.dart';
 import '../../core/models/surah_model.dart';
+import 'reciters_page.dart';
 
 class SurahsGlobalPage extends StatefulWidget {
-  const SurahsGlobalPage({super.key});
 
   @override
   State<SurahsGlobalPage> createState() => _SurahsGlobalPageState();
@@ -21,7 +21,6 @@ class _SurahsGlobalPageState extends State<SurahsGlobalPage> {
       body: Column(
         children: [
 
-          // 🔍 SEARCH BAR
           Padding(
             padding: const EdgeInsets.all(10),
             child: TextField(
@@ -38,7 +37,6 @@ class _SurahsGlobalPageState extends State<SurahsGlobalPage> {
             ),
           ),
 
-          // 📜 LIST
           Expanded(
             child: FutureBuilder<List<Surah>>(
               future: api.fetchSurahs(),
@@ -71,9 +69,13 @@ class _SurahsGlobalPageState extends State<SurahsGlobalPage> {
                       subtitle: Text(surah.nameAr),
 
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Choose a reciter to play"),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => RecitersPage(
+                              surahId: surah.id,
+                              surahName: surah.nameEn,
+                            ),
                           ),
                         );
                       },

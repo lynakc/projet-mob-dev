@@ -8,7 +8,6 @@ class FavoritesPage extends StatelessWidget {
 
   final FavoritesService favService = FavoritesService();
 
-  @override
   Future<bool> confirmDeletion(BuildContext context) async {
     // 🔴 TEMPORAIRE (en attendant Personne A)
     return true;
@@ -50,6 +49,7 @@ class FavoritesPage extends StatelessWidget {
               final titleEn = fav['titleEn'];
               final url = fav['url'];
               final reciter = fav['reciter'];
+              final surahId = int.tryParse(fav['surahId'].toString()) ?? 0;
 
               return ListTile(
                 title: Text(titleEn),
@@ -67,6 +67,7 @@ class FavoritesPage extends StatelessWidget {
                           titleEn: titleEn,
                           url: url,
                           reciter: reciter,
+                          surahId: surahId,
                         ),
                       );
                     } else {

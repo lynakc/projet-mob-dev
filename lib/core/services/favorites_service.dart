@@ -25,6 +25,7 @@ class FavoritesService {
         "titleEn": audio.titleEn,
         "url": audio.url,
         "reciter": audio.reciter,
+        "surahId": audio.surahId,
     });
   }
 

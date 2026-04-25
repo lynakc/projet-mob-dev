@@ -6,8 +6,13 @@ import '../../core/models/reciter_model.dart';
 
 class SurahsPage extends StatelessWidget {
   final Reciter reciter;
+  final int? surahId;
 
-  const SurahsPage({super.key, required this.reciter});
+  const SurahsPage({
+    super.key,
+    required this.reciter,
+    this.surahId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +44,26 @@ class SurahsPage extends StatelessWidget {
             return Center(child: Text(snapshot.error.toString()));
           }
 
-          final audios = snapshot.data!;
+          final audios = snapshot.data!
+            .where((a) =>
+              surahId == null || a.surahId == surahId)
+            .toList();
+
+          if (audios.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 50, color: Colors.grey),
+                  SizedBox(height: 10),
+                  Text(
+                    "This reciter does not have this surah",
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ],
+              ),
+            );
+          }
 
           return ListView.builder(
             itemCount: audios.length,

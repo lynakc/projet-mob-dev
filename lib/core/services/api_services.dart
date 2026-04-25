@@ -44,27 +44,35 @@ class ApiService {
     );
 
     final audioResponse = await http.get(
-      Uri.parse("https://quran.yousefheiba.com/api/reciterAudio?reciter_id=$reciterId"),
+      Uri.parse(
+        "https://quran.yousefheiba.com/api/reciterAudio?reciter_id=$reciterId",
+      ),
     );
 
-    if (surahResponse.statusCode == 200 && audioResponse.statusCode == 200) {
+    if (surahResponse.statusCode == 200 &&
+        audioResponse.statusCode == 200) {
 
       final surahs = jsonDecode(surahResponse.body);
       final audioJson = jsonDecode(audioResponse.body);
       final audioList = audioJson['audio_urls'];
 
+      final reciterName = audioJson['reciter_name'];
+
       return audioList.map<AudioModel>((audio) {
 
         final surah = surahs.firstWhere(
-          (s) => s['id'] == audio['surah_id'],
+              (s) => s['id'] == audio['surah_id'],
           orElse: () => null,
         );
 
         return AudioModel(
           titleAr: audio['surah_name_ar'],
-          titleEn: surah != null ? surah['name_en'] : audio['surah_name_ar'],
+          titleEn: surah != null
+              ? surah['name_en']
+              : audio['surah_name_ar'], // fallback
           url: audio['audio_url'],
-          reciter: audioJson['reciter_name'],
+          reciter: reciterName,
+          surahId: int.parse(audio['surah_id']),
         );
 
       }).toList();

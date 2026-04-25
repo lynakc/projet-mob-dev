@@ -70,7 +70,10 @@ class _RecitersPageState extends State<RecitersPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => SurahsPage(reciter: reciter),
+                            builder: (_) => SurahsPage(
+                              reciter: reciter,
+                              surahId: widget.surahId,
+                            ),
                           ),
                         );
                       },
