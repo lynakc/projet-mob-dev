@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:projetmobdev/features/player/reciters_page.dart';
 import '../../core/services/auth_service.dart';
@@ -89,4 +89,4 @@ class ProfilePage extends StatelessWidget {
       ),
     );
   }
-}
+}*/
