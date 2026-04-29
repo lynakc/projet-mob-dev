@@ -60,6 +60,7 @@ class _SignupPageState extends State<SignupPage> {
         email: email.text,
         password: password.text,
       );
+      showMsg("Account created successfully");
       Navigator.pop(context);
     } catch (e) {
       showMsg(e.toString());
