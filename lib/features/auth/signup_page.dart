@@ -61,10 +61,8 @@ class _SignupPageState extends State<SignupPage> {
         email: email.text,
         password: password.text,
       );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-      );
+      showMsg("Account created successfully");
+      Navigator.pop(context);
     } catch (e) {
       showMsg(e.toString());
     }

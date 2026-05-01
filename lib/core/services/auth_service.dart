@@ -12,7 +12,14 @@ class AuthService {
 
   bool isAtLeast13(DateTime dob) {
     final now = DateTime.now();
-    return now.year - dob.year >= 13;
+    int age = now.year - dob.year;
+
+    if (now.month < dob.month ||
+        (now.month == dob.month && now.day < dob.day)) {
+      age--;
+    }
+
+    return age >= 13;
   }
 
   Future<void> signup({
