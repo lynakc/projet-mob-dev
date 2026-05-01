@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/services/favorites_service.dart';
 import '../../core/models/audio_model.dart';
+import '../../core/services/biometric_service.dart';
 
 class FavoritesPage extends StatelessWidget {
   FavoritesPage({super.key});
@@ -9,11 +10,7 @@ class FavoritesPage extends StatelessWidget {
   final FavoritesService favService = FavoritesService();
 
   Future<bool> confirmDeletion(BuildContext context) async {
-    // 🔴 TEMPORAIRE (en attendant Personne A)
-    return true;
-
-    // 🟢 FUTUR (Personne A)
-    // return await BiometricService().authenticate();
+    return await BiometricService().authenticate();
   }
   Widget build(BuildContext context) {
     return Scaffold(

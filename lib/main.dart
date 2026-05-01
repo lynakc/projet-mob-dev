@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:projetmobdev/features/auth/login_page.dart';
 import 'features/home/home_page.dart';
 import 'features/auth/reset_password.dart';
+import 'features/welcome/welcome_page.dart';
+import 'features/auth/lock_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,7 +33,7 @@ class MyApp extends StatelessWidget {
           }
           return snapshot.data == null
               ? const LoginPage()
-              : const HomePage();
+              : const LockScreen();
         },
       ),
     );
