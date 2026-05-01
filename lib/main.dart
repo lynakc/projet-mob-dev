@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'features/home/home_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'features/auth/reset_password.dart';
+import 'features/welcome/welcome_page.dart';
+import 'features/auth/lock_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +22,11 @@ class MyApp extends StatelessWidget {
       routes: {
         '/reset-password': (context) => ResetPasswordPage(),
       },
-      home: const HomePage(),
+
+
+      home: FirebaseAuth.instance.currentUser == null
+          ? const WelcomePage()
+          : const LockScreen(),
     );
   }
 }

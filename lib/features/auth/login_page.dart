@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'signup_page.dart';
 import '../../core/services/auth_service.dart';
+import 'lock_screen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,7 +18,7 @@ class _LoginPageState extends State<LoginPage> {
   void login() async {
     try {
       if (!service.isValidEmail(loginEmail.text)) {
-        showMsg("Email invalide");
+        showMsg("Email invalid");
         return;
       }
 
@@ -30,11 +31,19 @@ class _LoginPageState extends State<LoginPage> {
         loginEmail.text,
         loginPwd.text,
       );
-    } catch (e) {
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LockScreen()),
+      );
+
+    }
+    catch (e) {
+      print("LOGIN ERROR: $e");
       showMsg(e.toString());
     }
   }
-
   void showMsg(String msg) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(msg)));

@@ -46,7 +46,7 @@ class AuthService {
         password: password,
       );
     } on FirebaseAuthException catch (e) {
-      throw Exception(e.message);
+      throw Exception(e.code);
     }
   }
 
@@ -69,8 +69,5 @@ class AuthService {
       throw Exception(e.message);
     }
   }
-
-
-
 
 }
