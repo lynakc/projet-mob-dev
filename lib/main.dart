@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
           }
           return snapshot.data == null
               ? const LoginPage()
-              : const HomePage();
+              : const LockScreen();
         },
       ),
     );

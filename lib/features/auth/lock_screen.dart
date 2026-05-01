@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projetmobdev/features/home/home_page.dart';
 import '../../core/services/biometric_service.dart';
 import '../home/main_page.dart';
 
@@ -29,7 +30,7 @@ class _LockScreenState extends State<LockScreen> {
     if (ok) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const MainPage()),
+        MaterialPageRoute(builder: (_) => const HomePage()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
