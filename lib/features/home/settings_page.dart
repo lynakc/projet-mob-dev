@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/services/auth_service.dart';
+import '../auth/login_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -35,7 +36,13 @@ class SettingsPage extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 ElevatedButton(
-                  onPressed: () => service.logout(),
+                  onPressed: () async {
+                    await service.logout();
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                          (route) => false,
+                    );
+                  },
                   child: const Text("Logout"),
                 ),
               ],

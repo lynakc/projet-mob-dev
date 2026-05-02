@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/services/favorites_service.dart';
 import '../../core/models/audio_model.dart';
 import '../../core/services/biometric_service.dart';
+import '../player/player_page.dart';
 
 class FavoritesPage extends StatelessWidget {
   FavoritesPage({super.key});
@@ -76,7 +77,26 @@ class FavoritesPage extends StatelessWidget {
                 ),
 
                 onTap: () {
-                  print("Play: $url"); // 🔥 prêt pour player
+
+                  final playlist = docs.map((doc) {
+                    return AudioModel(
+                      titleAr: doc['titleAr'],
+                      titleEn: doc['titleEn'],
+                      url: doc['url'],
+                      reciter: doc['reciter'],
+                      surahId: int.tryParse(doc['surahId'].toString()) ?? 0,
+                    );
+                  }).toList();
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PlayerPage(
+                        playlist: playlist,
+                        index: index,
+                      ),
+                    ),
+                  );
                 },
               );
             },

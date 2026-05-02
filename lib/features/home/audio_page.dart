@@ -1,5 +1,5 @@
+// features/home/audio_page.dart
 import 'package:flutter/material.dart';
-//import '../player/audio_list_page.dart';
 import '../favorites/favorites_page.dart';
 import '../player/reciters_page.dart';
 import '../player/surahs_global_page.dart';
@@ -14,38 +14,34 @@ class AudioPage extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => RecitersPage()),
-                );
-              },
-              child: const Text("Reciters"),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.mic),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RecitersPage()),
+              ),
+              label: const Text("Browse by Reciter"),
             ),
-
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => SurahsGlobalPage()),
-                );
-              },
-              child: const Text("Surahs"),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.menu_book),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => SurahsGlobalPage()),
+              ),
+              label: const Text("Browse by Surah"),
             ),
-
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => FavoritesPage()),
-                );
-              },
-              child: const Text("Favorites"),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.favorite),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => FavoritesPage()),
+              ),
+              label: const Text("Favorites"),
             ),
-
           ],
         ),
       ),
