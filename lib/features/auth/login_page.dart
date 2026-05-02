@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'signup_page.dart';
 import '../../core/services/auth_service.dart';
-import 'lock_screen.dart';
+import '/features/welcome/welcome_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -35,7 +35,7 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const LockScreen()),
+        MaterialPageRoute(builder: (_) => const WelcomePage()),
       );
 
     }

@@ -11,9 +11,14 @@ class Surah {
 
   factory Surah.fromJson(Map<String, dynamic> json) {
     return Surah(
-      id: int.parse(json['id']),
-      nameAr: json['name_ar'],
-      nameEn: json['name_en'],
+      id: _parseInt(json['id']),
+      nameAr: json['name_ar'] ?? '',
+      nameEn: json['name_en'] ?? '',
     );
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value is int) return value;
+    return int.tryParse(value.toString()) ?? 0;
   }
 }
