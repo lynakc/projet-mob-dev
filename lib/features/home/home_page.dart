@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'stats_page.dart';
 import 'audio_page.dart';
 import 'settings_page.dart';
 
@@ -10,10 +11,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int index = 0;
+  int currentIndex = 1;
 
-  final pages = [
-    Center(child: Text("Stats Page")),
+  final List<Widget> pages = const [
+    StatsPage(),
     AudioPage(),
     SettingsPage(),
   ];
@@ -21,15 +22,19 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: pages[index],
+      body: pages[currentIndex],
 
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: index,
-        onTap: (value) {
+        currentIndex: currentIndex,
+        onTap: (index) {
           setState(() {
-            index = value;
+            currentIndex = index;
           });
         },
+
+        selectedItemColor: Colors.green,
+        unselectedItemColor: Colors.grey,
+
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.bar_chart),

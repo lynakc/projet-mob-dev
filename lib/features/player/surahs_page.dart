@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/services/api_services.dart';
 import '../../core/services/favorites_service.dart';
+import '../../core/services/audio_service.dart';
 import '../../core/models/audio_model.dart';
 import '../../core/models/reciter_model.dart';
+import 'player_page.dart';
 
 class SurahsPage extends StatefulWidget {
   final Reciter reciter;
@@ -15,12 +17,14 @@ class SurahsPage extends StatefulWidget {
   });
 
   @override
-  State<SurahsPage> createState() => _SurahsPageState();
+  State<SurahsPage> createState() => SurahsPageState();
 }
 
-class _SurahsPageState extends State<SurahsPage> {
+class SurahsPageState extends State<SurahsPage> {
   final ApiService api = ApiService();
   final FavoritesService favService = FavoritesService();
+  final AudioService audioService = AudioService();
+
   String search = "";
 
   @override
@@ -31,13 +35,16 @@ class _SurahsPageState extends State<SurahsPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(widget.reciter.nameEn),
-            Text(widget.reciter.nameAr, style: TextStyle(fontSize: 14)),
+            Text(
+              widget.reciter.nameAr,
+              style: const TextStyle(fontSize: 14),
+            ),
           ],
         ),
       ),
       body: Column(
         children: [
-
+          // 🔍 SEARCH
           Padding(
             padding: const EdgeInsets.all(10),
             child: TextField(
@@ -54,22 +61,25 @@ class _SurahsPageState extends State<SurahsPage> {
             ),
           ),
 
+          // 📄 LIST
           Expanded(
             child: FutureBuilder<List<AudioModel>>(
               future: api.fetchAudioByReciter(widget.reciter.id),
               builder: (context, snapshot) {
-
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
                 if (snapshot.hasError) {
-                  return Center(child: Text(snapshot.error.toString()));
+                  return Center(
+                    child: Text(snapshot.error.toString()),
+                  );
                 }
 
                 final audios = snapshot.data!
                     .where((a) =>
-                (widget.surahId == null || a.surahId == widget.surahId) &&
+                (widget.surahId == null ||
+                    a.surahId == widget.surahId) &&
                     (a.titleEn.toLowerCase().contains(search) ||
                         a.titleAr.contains(search)))
                     .toList();
@@ -87,8 +97,23 @@ class _SurahsPageState extends State<SurahsPage> {
 
                     return ListTile(
                       title: Text(audio.titleEn),
-                      subtitle: Text("${audio.titleAr} • ${audio.reciter}"),
+                      subtitle:
+                      Text("${audio.titleAr} • ${audio.reciter}"),
 
+                      // ▶ PLAY AUDIO
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PlayerPage(
+                              playlist: audios,
+                              index: index,
+                            )
+                          ),
+                        );
+                      },
+
+                      // ❤️ FAVORITES
                       trailing: StreamBuilder<bool>(
                         stream: favService.isFavorite(audio),
                         builder: (context, snapshot) {
@@ -111,10 +136,6 @@ class _SurahsPageState extends State<SurahsPage> {
                           );
                         },
                       ),
-
-                      onTap: () {
-                        print(audio.url);
-                      },
                     );
                   },
                 );

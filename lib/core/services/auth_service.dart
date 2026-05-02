@@ -22,7 +22,7 @@ class AuthService {
     return age >= 13;
   }
 
-  Future<void> signup({
+  Future<String> signup({
     required String firstName,
     required String lastName,
     required DateTime dob,
@@ -41,6 +41,7 @@ class AuthService {
         "dob": dob.toString().split(" ")[0],
         "email": email.trim(),
       });
+      return cred.user!.uid;
     } on FirebaseAuthException catch (e) {
       throw Exception(e.message);
     }
@@ -75,6 +76,16 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw Exception(e.message);
     }
+  }
+  Future<void> initListeningStats(String uid) async {
+    await _db.collection("users").doc(uid).set({
+      "listeningStats": {
+        "totalSeconds": 0,
+        "monthlyGoal": 7200, // 20h default
+        "daily": {},
+        "topSurahs": {}
+      }
+    }, SetOptions(merge: true));
   }
 
 }

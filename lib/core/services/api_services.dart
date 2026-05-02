@@ -38,7 +38,6 @@ class ApiService {
   }
 
   Future<List<AudioModel>> fetchAudioByReciter(int reciterId) async {
-
     final surahResponse = await http.get(
       Uri.parse("https://quran.yousefheiba.com/api/surahs"),
     );
@@ -51,7 +50,6 @@ class ApiService {
 
     if (surahResponse.statusCode == 200 &&
         audioResponse.statusCode == 200) {
-
       final surahs = jsonDecode(surahResponse.body);
       final audioJson = jsonDecode(audioResponse.body);
       final audioList = audioJson['audio_urls'];
@@ -59,7 +57,6 @@ class ApiService {
       final reciterName = audioJson['reciter_name'];
 
       return audioList.map<AudioModel>((audio) {
-
         final surah = surahs.firstWhere(
               (s) => s['id'] == audio['surah_id'],
           orElse: () => null,
@@ -69,14 +66,13 @@ class ApiService {
           titleAr: audio['surah_name_ar'],
           titleEn: surah != null
               ? surah['name_en']
-              : audio['surah_name_ar'], // fallback
+              : audio['surah_name_ar'],
+          // fallback
           url: audio['audio_url'],
           reciter: reciterName,
           surahId: int.parse(audio['surah_id']),
         );
-
       }).toList();
-
     } else {
       throw Exception("Error loading audio");
     }

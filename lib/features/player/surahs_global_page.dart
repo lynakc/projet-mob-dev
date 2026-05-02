@@ -6,10 +6,10 @@ import 'reciters_page.dart';
 class SurahsGlobalPage extends StatefulWidget {
 
   @override
-  State<SurahsGlobalPage> createState() => _SurahsGlobalPageState();
+  State<SurahsGlobalPage> createState() => SurahsGlobalPageState();
 }
 
-class _SurahsGlobalPageState extends State<SurahsGlobalPage> {
+class SurahsGlobalPageState extends State<SurahsGlobalPage> {
   final ApiService api = ApiService();
   String search = "";
 
