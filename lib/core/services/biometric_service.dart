@@ -1,19 +1,19 @@
 import 'package:local_auth/local_auth.dart';
+import 'package:android_intent_plus/android_intent.dart';
 
 class BiometricService {
   final LocalAuthentication auth = LocalAuthentication();
 
+  Future<bool> canUseBiometrics() async {
+    final canCheck = await auth.canCheckBiometrics;
+    final isSupported = await auth.isDeviceSupported();
+    final enrolled = await auth.getAvailableBiometrics();
+
+    return canCheck && isSupported && enrolled.isNotEmpty;
+  }
+
   Future<bool> authenticate() async {
     try {
-      bool canCheck = await auth.canCheckBiometrics;
-      bool isDeviceSupported = await auth.isDeviceSupported();
-
-      if (!canCheck || !isDeviceSupported) return false;
-
-      // Check if any biometrics are enrolled
-      final enrolled = await auth.getAvailableBiometrics();
-      if (enrolled.isEmpty) return false;  // ← add this
-
       return await auth.authenticate(
         localizedReason: 'Scan your fingerprint to enter',
         options: const AuthenticationOptions(
@@ -24,6 +24,10 @@ class BiometricService {
     } catch (e) {
       return false;
     }
+  }
 
+  Future<void> openSettings() async {
+    final intent = AndroidIntent(action: 'android.settings.SETTINGS');
+    await intent.launch();
   }
 }
