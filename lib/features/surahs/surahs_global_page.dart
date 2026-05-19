@@ -28,20 +28,8 @@ class SurahsGlobalPageState extends State<SurahsGlobalPage> {
       body: SafeArea(
         child: Column(
           children: [
-            /// TITLE
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                "SURAH LIST",
-                style: TextStyle(
-                  fontFamily: "PTSerif",
-                  fontSize: 18,
-                  color: primary,
-                ),
-              ),
-            ),
+            _buildGlobalPageHeader(context),
 
-            /// SEARCH
             CustomSearchBar(
               hint: "Search surah...",
               onChanged: (value) {
@@ -52,7 +40,6 @@ class SurahsGlobalPageState extends State<SurahsGlobalPage> {
             ),
 
             const SizedBox(height: 10),
-
             /// LIST
             Expanded(
               child: FutureBuilder<List<Surah>>(
@@ -123,6 +110,46 @@ class SurahsGlobalPageState extends State<SurahsGlobalPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+  Widget _buildGlobalPageHeader(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(50),
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: primary.withOpacity(0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: primary),
+                ),
+              ),
+            ),
+          ),
+          // ✅ Titre manquant ajouté
+          Text(
+            "SURAHS",
+            style: TextStyle(
+              fontFamily: "PTSerif",
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: primary,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -11,31 +11,40 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int currentIndex = 1;
+  int currentIndex = 0;
 
   final List<Widget> pages = const [StatsPage(), AudioPage(), SettingsPage()];
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+
     return Scaffold(
       body: pages[currentIndex],
 
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: (index) {
-          setState(() {
-            currentIndex = index;
-          });
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: currentIndex,
+        onDestinationSelected: (index) {
+          setState(() => currentIndex = index);
         },
-
-        selectedItemColor: Colors.green,
-        unselectedItemColor: Colors.grey,
-
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: "Stats"),
-          BottomNavigationBarItem(icon: Icon(Icons.headphones), label: "Audio"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
+        // Fond blanc propre, indicateur pill autour de l'icône active
+        backgroundColor: Colors.white,
+        indicatorColor: primary,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        destinations: [
+          NavigationDestination(
+            icon: const Icon(Icons.bar_chart_outlined),
+            selectedIcon: Icon(Icons.bar_chart, color: primary),
+            label: "Stats",
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.headphones_outlined),
+            selectedIcon: Icon(Icons.headphones, color: primary),
+            label: "Audio",
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings, color: Colors.white),
             label: "Settings",
           ),
         ],

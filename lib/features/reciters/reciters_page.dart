@@ -24,7 +24,6 @@ class _RecitersPageState extends State<RecitersPage> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
     final accent = Theme.of(context).colorScheme.secondary;
 
     return Scaffold(
@@ -36,17 +35,7 @@ class _RecitersPageState extends State<RecitersPage> {
             /// ─────────────────────────
             /// TITLE CENTER
             /// ─────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                "RECITERS",
-                style: TextStyle(
-                  fontFamily: "PTSerif",
-                  fontSize: 18,
-                  color: primary,
-                ),
-              ),
-            ),
+            _buildPageHeader(context, "RECITERS"),
 
             /// ─────────────────────────
             /// SEARCH
@@ -76,9 +65,9 @@ class _RecitersPageState extends State<RecitersPage> {
                   final reciters = snapshot.data!
                       .where(
                         (r) =>
-                            r.nameAr.toLowerCase().contains(search) ||
-                            r.nameEn.toLowerCase().contains(search),
-                      )
+                    r.nameAr.toLowerCase().contains(search) ||
+                        r.nameEn.toLowerCase().contains(search),
+                  )
                       .toList();
 
                   if (reciters.isEmpty) {
@@ -116,6 +105,47 @@ class _RecitersPageState extends State<RecitersPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+  Widget _buildPageHeader(BuildContext context, String title) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Bouton retour aligné à gauche
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(50),
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: primary.withOpacity(0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: primary),
+                ),
+              ),
+            ),
+          ),
+          // Titre au centre
+          Text(
+            title,
+            style: TextStyle(
+              fontFamily: "PTSerif",
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: primary,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ],
       ),
     );
   }

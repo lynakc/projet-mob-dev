@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:just_audio/just_audio.dart';
 import 'biometric_Controller.dart';
 import '../auth/login_page.dart';
 import '../welcome/welcome_page.dart';
@@ -17,6 +18,7 @@ class _LockScreenState extends State<LockScreen> with WidgetsBindingObserver {
   final controller = BiometricController();
   BioState state = BioState.checking;
   bool _isAuthenticated = false;
+  final AudioPlayer _successPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -31,6 +33,7 @@ class _LockScreenState extends State<LockScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _successPlayer.dispose();
     super.dispose();
   }
 
@@ -50,10 +53,12 @@ class _LockScreenState extends State<LockScreen> with WidgetsBindingObserver {
     });
 
     controller.authenticate(
-      onSuccess: () {
+      onSuccess: () async {
         if (!mounted) return;
 
         controller.stopAuthentication(); //stop contr
+
+        await _playSuccessSound();
 
         setState(() {
           state = BioState.success;
@@ -68,6 +73,29 @@ class _LockScreenState extends State<LockScreen> with WidgetsBindingObserver {
         });
       },
     );
+  }
+
+  Future<void> _playSuccessSound() async {
+    try {
+      // Option A — son depuis les assets (recommandé, qualité garantie)
+      // Ajouter dans pubspec.yaml assets: - assets/sounds/success.mp3
+       await _successPlayer.setAsset('assets/sounds/success.mp3');
+
+      // Option B — son système natif Android (aucun asset requis)
+     // await _successPlayer.setUrl(
+     //   'https://www.soundjay.com/misc/sounds/success-notification-alert-3.mp3',
+     // );
+
+      await _successPlayer.play();
+
+      // Attendre que le son se termine avant de continuer
+      await _successPlayer.playerStateStream.firstWhere(
+            (s) => s.processingState == ProcessingState.completed,
+      );
+    } catch (e) {
+      // Si le son échoue, l'authentification continue normalement
+      debugPrint("Success sound error: $e");
+    }
   }
 
   @override

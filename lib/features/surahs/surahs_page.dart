@@ -31,7 +31,6 @@ class SurahsPageState extends State<SurahsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -42,26 +41,7 @@ class SurahsPageState extends State<SurahsPage> {
             /// ─────────────────────────────
             /// HEADER (CENTERED)
             /// ─────────────────────────────
-            Padding(
-              padding: const EdgeInsets.only(top: 10, bottom: 10),
-              child: Column(
-                children: [
-                  Text(
-                    "RECITER",
-                    style: TextStyle(
-                      fontFamily: "PTSerif",
-                      fontSize: 16,
-                      color: primary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    widget.reciter.nameEn,
-                    style: const TextStyle(fontFamily: "PTSerif", fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
+            _buildReciterHeader(context),
 
             /// ─────────────────────────────
             /// SEARCH (custom color)
@@ -95,11 +75,11 @@ class SurahsPageState extends State<SurahsPage> {
                   final audios = snapshot.data!
                       .where(
                         (a) =>
-                            (widget.surahId == null ||
-                                a.surahId == widget.surahId) &&
-                            (a.titleEn.toLowerCase().contains(search) ||
-                                a.titleAr.toLowerCase().contains(search)),
-                      )
+                    (widget.surahId == null ||
+                        a.surahId == widget.surahId) &&
+                        (a.titleEn.toLowerCase().contains(search) ||
+                            a.titleAr.toLowerCase().contains(search)),
+                  )
                       .toList();
 
                   if (audios.isEmpty) {
@@ -170,6 +150,55 @@ class SurahsPageState extends State<SurahsPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+  Widget _buildReciterHeader(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(50),
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: primary.withOpacity(0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: primary),
+              ),
+            ),
+          ),
+          Column(
+            children: [
+              Text(
+                "RECITER",
+                style: TextStyle(
+                  fontFamily: "PTSerif",
+                  fontSize: 11,
+                  color: primary.withOpacity(0.55),
+                  letterSpacing: 1.4,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                widget.reciter.nameEn,
+                style: TextStyle(
+                  fontFamily: "PTSerif",
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: primary,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

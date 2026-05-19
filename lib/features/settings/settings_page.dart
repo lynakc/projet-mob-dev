@@ -147,7 +147,7 @@ class SettingsPage extends StatelessWidget {
                       await service.logout();
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(builder: (_) => const LoginPage()),
-                        (route) => false,
+                            (route) => false,
                       );
                     },
                     child: const Text(
@@ -206,17 +206,19 @@ class SettingsPage extends StatelessWidget {
 
   // ================= CENTER THEME DIALOG =================
   void _showThemeDialog(BuildContext context) {
+    final currentTheme = ThemeState.currentTheme.value;
+
     showDialog(
       context: context,
       builder: (_) {
         return Center(
           child: Material(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(20),
             child: Container(
-              width: 250,
-              padding: const EdgeInsets.all(20),
+              width: 270,
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
+                borderRadius: BorderRadius.circular(20),
                 color: Colors.white,
               ),
               child: Column(
@@ -227,11 +229,18 @@ class SettingsPage extends StatelessWidget {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
 
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 20),
 
-                  _themeOption(context, "blue", Colors.blue),
-                  _themeOption(context, "green", Colors.green),
-                  _themeOption(context, "purple", Colors.purple),
+                  _themeOption(context, "blue",   const Color(0xFF1565C0), currentTheme),
+                  const Divider(height: 1),
+                  _themeOption(context, "green",  const Color(0xFF2E7D32), currentTheme),
+                  const Divider(height: 1),
+                  _themeOption(context, "purple", const Color(0xFF6A1B9A), currentTheme),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Cancel"),
+                  ),
                 ],
               ),
             ),
@@ -242,22 +251,42 @@ class SettingsPage extends StatelessWidget {
   }
 
   // ================= THEME OPTION =================
-  Widget _themeOption(BuildContext context, String name, Color color) {
+  Widget _themeOption(BuildContext context, String name, Color color, String currentTheme) {
+    final isActive = currentTheme == name;
     return GestureDetector(
       onTap: () {
         changeTheme(name);
         Navigator.pop(context); //  clean fix
       },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Text(
-          "($name)",
-          style: TextStyle(
-            color: color,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            // Cercle de couleur
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(color: color.withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 2)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 14),
+            Text(
+              name[0].toUpperCase() + name.substring(1),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                color: isActive ? color : Colors.black87,
+              ),
+            ),
+            const Spacer(),
+            if (isActive)
+              Icon(Icons.check_circle_rounded, color: color, size: 20),
+          ],
         ),
       ),
     );

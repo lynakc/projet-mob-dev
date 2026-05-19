@@ -71,6 +71,7 @@ flutter:
   assets:
     - assets/images/logo.png
     - assets/images/small_logo.png
+    - assets/sounds/success.mp3
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
