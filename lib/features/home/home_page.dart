@@ -34,12 +34,12 @@ class _HomePageState extends State<HomePage> {
         destinations: [
           NavigationDestination(
             icon: const Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart, color: primary),
+            selectedIcon: Icon(Icons.bar_chart, color: Colors.white),
             label: "Stats",
           ),
           NavigationDestination(
             icon: const Icon(Icons.headphones_outlined),
-            selectedIcon: Icon(Icons.headphones, color: primary),
+            selectedIcon: Icon(Icons.headphones, color: Colors.white),
             label: "Audio",
           ),
           NavigationDestination(
