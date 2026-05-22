@@ -69,7 +69,7 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
   @override
   Future<void> seek(Duration position) => _player.seek(position);
 
-  /// 📡 BROADCAST STATE (for notification controls)
+  /// BROADCAST STATE (for notification controls)
   void _broadcastState(PlaybackEvent event) {
     playbackState.add(
       PlaybackState(

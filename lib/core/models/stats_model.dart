@@ -28,7 +28,7 @@ class StatsModel {
       fullName: "${data['firstName'] ?? ''} ${data['lastName'] ?? ''}".trim(),
 
       totalSeconds: _toInt(listening['totalSeconds']),
-      monthlyGoal: _toInt(listening['monthlyGoal'], fallback: 72000),
+      monthlyGoal: _toInt(listening['goalSeconds'], fallback: 72000),
 
       daily: _convertMap(listening['daily']),
       topSurahs: _convertMap(listening['topSurahs']),

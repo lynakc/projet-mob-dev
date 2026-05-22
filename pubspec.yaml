@@ -94,6 +94,10 @@ flutter:
       fonts:
         - asset: assets/fonts/PTSerif-Regular.ttf
 
+    - family: Amiri
+      fonts:
+        - asset: assets/fonts/Amiri-Regular.ttf
+
     - family: Inter
       fonts:
         - asset: assets/fonts/Inter-Regular.ttf

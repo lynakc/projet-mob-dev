@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '/core/services/stats_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class StatsPage extends StatefulWidget {
   const StatsPage({super.key});
@@ -11,72 +11,29 @@ class StatsPage extends StatefulWidget {
 }
 
 class _StatsPageState extends State<StatsPage> {
-  final StatsService statsService = StatsService();
-
-  int total = 0;
-  int today = 0;
-  int goal = 72000;
-  Map<String, int> top = {};
-  Map daily = {};
-  String name = "User";
-
-  bool loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    loadAll();
+  Stream<DocumentSnapshot> getStatsStream() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    return FirebaseFirestore.instance.collection('users').doc(uid).snapshots();
   }
 
-  Future<void> loadAll() async {
-    total = await statsService.getTotalSeconds();
-    today = await statsService.getTodaySeconds();
-    top = await statsService.getTopSurahs();
-    daily = await statsService.getDailyStats();
-    name = await statsService.getUserName();
-    goal = await loadGoal();
-
-    setState(() {
-      loading = false;
-    });
-  }
-
-  // LOCAL GOAL
-  Future<int> loadGoal() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt('goal') ?? 72000;
-  }
-
-  Future<void> saveGoal(int value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('goal', value);
-  }
-
-  // ⏱ FORMAT
   String formatHM(int sec) {
     final h = sec ~/ 3600;
     final m = (sec % 3600) ~/ 60;
     return "$h h $m min";
   }
 
-  // MONTH DATA
-  List<double> getMonthlyData() {
+  List<MapEntry<String, double>> getLast7Days(Map<String, dynamic> daily) {
     final now = DateTime.now();
-    final days = DateTime(now.year, now.month + 1, 0).day;
-
-    List<double> data = List.filled(days, 0);
-
-    daily.forEach((date, value) {
-      final d = DateTime.parse(date);
-      if (d.month == now.month) {
-        data[d.day - 1] = (value / 60); // sec → min
-      }
-    });
-
-    return data;
+    List<MapEntry<String, double>> result = [];
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final key = date.toIso8601String().split("T")[0];
+      final value = (daily[key] ?? 0) / 60;
+      result.add(MapEntry(key, value.toDouble()));
+    }
+    return result;
   }
 
-  // returns a clean max Y value with a little headroom
   double _getMaxY(List<MapEntry<String, double>> data) {
     if (data.isEmpty) return 10;
     final max = data.map((e) => e.value).reduce((a, b) => a > b ? a : b);
@@ -85,7 +42,6 @@ class _StatsPageState extends State<StatsPage> {
     return ((max / step).ceil() * step) + step;
   }
 
-  // picks a clean interval so you get ~4-5 labels max, no floats
   double _getYInterval(List<MapEntry<String, double>> data) {
     if (data.isEmpty) return 5;
     final max = data.map((e) => e.value).reduce((a, b) => a > b ? a : b);
@@ -97,35 +53,8 @@ class _StatsPageState extends State<StatsPage> {
     return 30;
   }
 
-  List<MapEntry<String, double>> getLast7Days() {
-    final now = DateTime.now();
-    List<MapEntry<String, double>> result = [];
-
-    for (int i = 6; i >= 0; i--) {
-      final date = now.subtract(Duration(days: i));
-      final key = date.toIso8601String().split("T")[0];
-      final value = (daily[key] ?? 0) / 60; // seconds → minutes
-      result.add(MapEntry(key, value.toDouble()));
-    }
-    return result;
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: const Center(
-          child: CircularProgressIndicator(color: Color(0xFFC9A84C)),
-        ),
-      );
-    }
-
-    final last7 = getLast7Days();
-    final sorted = top.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    final progress = goal == 0 ? 0.0 : total / goal;
-
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -135,289 +64,351 @@ class _StatsPageState extends State<StatsPage> {
         iconTheme: IconThemeData(
           color: Theme.of(context).textTheme.bodyLarge?.color,
         ),
+        title: const Text(
+          "Statistics",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 👋 HEADER
-            Text(
-              "Welcome, $name",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              "Here is your listening journey so far.",
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.color?.withOpacity(0.6),
-              ),
-            ),
-            const SizedBox(height: 25),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: getStatsStream(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            // ⏱ TIME CARDS
-            Row(
+          final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+          final stats = data['listeningStats'] ?? {};
+          final userData = data;
+
+
+          final firstName = (userData['firstName'] ?? '').toString().trim();
+          final lastName = (userData['lastName'] ?? '').toString().trim();
+          final fullName = '$firstName $lastName'.trim();
+
+          final total = (stats['totalSeconds'] ?? 0).toDouble();
+          final daily = Map<String, dynamic>.from(stats['daily'] ?? {});
+          final top = Map<String, dynamic>.from(stats['topSurahs'] ?? {});
+
+          final todayKey = DateTime.now().toIso8601String().split('T')[0];
+          final today = (daily[todayKey] ?? 0).toDouble();
+
+          final sorted = top.entries.toList()
+            ..sort((a, b) => (b.value as num).compareTo(a.value as num));
+
+          final last7 = getLast7Days(daily);
+          final goal = (stats['goalSeconds'] ?? 72000) as num;
+          final progress = goal == 0 ? 0.0 : (total / goal).clamp(0.0, 1.0);
+
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: _buildStatCard(
-                    "Total Time",
-                    formatHM(total),
-                    Icons.headset_rounded,
+                // ── Welcome ──────
+                if (fullName.isNotEmpty) ...[
+                  Text(
+                    "Welcome back,",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.color
+                          ?.withOpacity(0.6),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: _buildStatCard(
-                    "Today",
-                    formatHM(today),
-                    Icons.today_rounded,
+                  const SizedBox(height: 2),
+                  Text(
+                    fullName,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 25),
+                  const SizedBox(height: 20),
+                ],
 
-            // 🎯 GOAL CARD
-            _buildContainerCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                // ── Stat Cards ───────────────────────────────────────
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        "Total listened",
+                        formatHM(total.toInt()),
+                        Icons.headphones_rounded,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        "Today",
+                        formatHM(today.toInt()),
+                        Icons.today_rounded,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // ── Monthly Goal ──────
+                _buildContainerCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Monthly Goal",
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          _buildGoalDropdown(goal.toInt()),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 8,
+                          backgroundColor: Colors.grey.withOpacity(0.15),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Color(0xFFC9A84C),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "${(progress * 100).toStringAsFixed(1)}%  ·  ${formatHM(total.toInt())} of ${goal.toInt() ~/ 3600} h",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.color
+                              ?.withOpacity(0.55),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // ── Chart ────────────────────────────────────────────
+                _buildContainerCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "Monthly Goal",
+                        "Last 7 days (min)",
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 15,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      _buildGoalDropdown(),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: LinearProgressIndicator(
-                      value: progress.clamp(0, 1),
-                      minHeight: 12,
-                      backgroundColor: Colors.grey.withOpacity(0.2),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Color(0xFFC9A84C),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        formatHM(total),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFFC9A84C),
-                        ),
-                      ),
-                      Text(
-                        formatHM(goal),
-                        style: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.color?.withOpacity(0.5),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 25),
-
-            // 📊 BAR CHART
-            _buildContainerCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Activity (Last 7 Days)",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 25),
-                  SizedBox(
-                    height: 200,
-                    child: BarChart(
-                      BarChartData(
-                        gridData: FlGridData(
-                          show: true,
-                          drawVerticalLine: false,
-                          horizontalInterval: _getYInterval(last7),
-                          getDrawingHorizontalLine: (value) => FlLine(
-                            color: Colors.grey.withOpacity(0.15),
-                            strokeWidth: 1,
-                          ),
-                        ),
-                        borderData: FlBorderData(show: false),
-                        maxY: _getMaxY(last7),
-                        titlesData: FlTitlesData(
-                          rightTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          topTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 40,
-                              interval: _getYInterval(last7),
-                              getTitlesWidget: (value, meta) {
-                                if (value != value.roundToDouble() ||
-                                    value == 0)
-                                  return const SizedBox();
-                                return Text(
-                                  "${value.toInt()}m",
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.color
-                                        ?.withOpacity(0.5),
-                                  ),
-                                );
-                              },
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        height: 180,
+                        child: BarChart(
+                          BarChartData(
+                            maxY: _getMaxY(last7),
+                            gridData: FlGridData(
+                              show: true,
+                              drawVerticalLine: false,
+                              getDrawingHorizontalLine: (_) => FlLine(
+                                color: Colors.grey.withOpacity(0.12),
+                                strokeWidth: 1,
+                              ),
                             ),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              interval: 1,
-                              getTitlesWidget: (value, meta) {
-                                final now = DateTime.now();
-                                final index = value.toInt();
-                                if (index < 0 || index >= last7.length)
-                                  return const SizedBox();
-                                final date = now.subtract(
-                                  Duration(days: 6 - index),
-                                );
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: Text(
-                                    "${date.day}/${date.month}",
+                            borderData: FlBorderData(show: false),
+                            titlesData: FlTitlesData(
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 28,
+                                  interval: _getYInterval(last7),
+                                  getTitlesWidget: (v, _) => Text(
+                                    v.toInt().toString(),
                                     style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
+                                      fontSize: 10,
                                       color: Theme.of(context)
                                           .textTheme
-                                          .bodyMedium
+                                          .bodySmall
                                           ?.color
                                           ?.withOpacity(0.5),
                                     ),
                                   ),
-                                );
-                              },
+                                ),
+                              ),
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  getTitlesWidget: (value, _) {
+                                    final i = value.toInt();
+                                    if (i < 0 || i >= last7.length) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    final date =
+                                    DateTime.parse(last7[i].key);
+                                    return Text(
+                                      "${date.day}/${date.month}",
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.color
+                                            ?.withOpacity(0.5),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              topTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              rightTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                            ),
+                            barGroups: last7.asMap().entries.map((e) {
+                              return BarChartGroupData(
+                                x: e.key,
+                                barRods: [
+                                  BarChartRodData(
+                                    toY: e.value.value,
+                                    color: const Color(0xFFC9A84C),
+                                    width: 14,
+                                    borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(6),
+                                    ),
+                                    backDrawRodData: BackgroundBarChartRodData(
+                                      show: true,
+                                      toY: _getMaxY(last7),
+                                      color: Colors.grey.withOpacity(0.07),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                            barTouchData: BarTouchData(
+                              touchTooltipData: BarTouchTooltipData(
+                                getTooltipItem: (group, _, rod, __) =>
+                                    BarTooltipItem(
+                                      "${rod.toY.toStringAsFixed(1)} min",
+                                      const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                              ),
                             ),
                           ),
                         ),
-                        barGroups: last7.asMap().entries.map((e) {
-                          return BarChartGroupData(
-                            x: e.key,
-                            barRods: [
-                              BarChartRodData(
-                                toY: e.value.value,
-                                width: 16,
-                                borderRadius: BorderRadius.circular(6),
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFFC9A84C),
-                                    Color(0xFFE8C96A),
-                                  ],
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
-                                ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
                       ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // ── Top Surahs ──────────
+                if (sorted.isNotEmpty)
+                  _buildContainerCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Most Listened",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        ...sorted.take(5).toList().asMap().entries.map((e) {
+                          final i = e.key;
+                          final surah = e.value;
+                          final count = (surah.value as num).toInt();
+                          final maxCount =
+                          (sorted.first.value as num).toInt();
+                          final fraction =
+                          maxCount > 0 ? count / maxCount : 0.0;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  child: Text(
+                                    "${i + 1}",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.color
+                                          ?.withOpacity(0.4),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                SizedBox(
+                                  width: 110,
+                                  child: Text(
+                                    surah.key,
+                                    style: const TextStyle(fontSize: 13),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value: fraction,
+                                      minHeight: 6,
+                                      backgroundColor:
+                                      Colors.grey.withOpacity(0.12),
+                                      valueColor:
+                                      const AlwaysStoppedAnimation<Color>(
+                                        Color(0xFFC9A84C),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  "${count}x",
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFFC9A84C),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 25),
 
-            // 🎵 TOP SURAHS
-            if (sorted.isNotEmpty) ...[
-              _buildContainerCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Most Played Surahs",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    ...sorted.take(5).map((e) {
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: Container(
-                          height: 45,
-                          width: 45,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFC9A84C).withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.music_note_rounded,
-                            color: Color(0xFFC9A84C),
-                          ),
-                        ),
-                        title: Text(
-                          e.key,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
-                        ),
-                        trailing: Text(
-                          "${e.value} plays",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.color?.withOpacity(0.5),
-                          ),
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-            ],
-          ],
-        ),
+                const SizedBox(height: 30),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
-  // ==========================================
-  // UI HELPER WIDGETS
-  // ==========================================
+  // ── Helpers ────
 
-  // Wrapper card for unified styling (Shadows + Rounded Corners)
   Widget _buildContainerCard({required Widget child}) {
     return Container(
       width: double.infinity,
@@ -437,7 +428,6 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
-  // Small Top Stat Cards
   Widget _buildStatCard(String title, String value, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -466,9 +456,11 @@ class _StatsPageState extends State<StatsPage> {
             title,
             style: TextStyle(
               fontSize: 13,
-              color: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.color?.withOpacity(0.6),
+              color: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.color
+                  ?.withOpacity(0.6),
             ),
           ),
         ],
@@ -476,8 +468,7 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
-  // Styled Dropdown for Goal selection
-  Widget _buildGoalDropdown() {
+  Widget _buildGoalDropdown(int goal) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
@@ -487,7 +478,7 @@ class _StatsPageState extends State<StatsPage> {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
-          value: goal,
+          value: [36000, 72000, 108000].contains(goal) ? goal : 72000,
           icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
           isDense: true,
           style: TextStyle(
@@ -502,11 +493,21 @@ class _StatsPageState extends State<StatsPage> {
             );
           }).toList(),
           onChanged: (value) async {
-            if (value != null) {
-              goal = value;
-              await saveGoal(value);
-              setState(() {});
-            }
+            if (value == null) return;
+
+            final user = FirebaseAuth.instance.currentUser;
+            if (user == null) return;
+
+            // Fix: Use goalSeconds consistently and merge properly
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .set({
+              'listeningStats': {
+                'goalSeconds': value, // Use goalSeconds
+                'totalSeconds': FieldValue.increment(0), // Preserve existing values
+              }
+            }, SetOptions(merge: true));
           },
         ),
       ),
