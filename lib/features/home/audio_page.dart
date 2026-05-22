@@ -15,12 +15,17 @@ class AudioPage extends StatefulWidget {
 
 class _AudioPageState extends State<AudioPage> {
   final HomeController controller = HomeController();
-  late HijriService hijriService; // ✅ declared as field
-  String hijriDate = "Loading..."; // ✅ declared as field
+  late AudioService audioService;
+  late HijriService hijriService; // declared as field
+  String hijriDate = "Loading..."; //  declared as field
+
+  String todayDhikr = "Loading...";
+  Map<String, String> prayerTimes = {};
 
   Duration current = Duration.zero;
   Duration total = Duration.zero;
   bool isPlaying = false;
+
 
   @override
   void initState() {
@@ -31,9 +36,12 @@ class _AudioPageState extends State<AudioPage> {
     );
 
     _init();
-    loadHijri(); // ✅ now calls class method
 
-    final audioService = AudioService();
+    loadHijri();
+    loadDhikr();
+    loadPrayerTimes();
+
+    audioService = AudioService();
 
     audioService.positionStream.listen((pos) {
       if (!mounted) return;
@@ -51,7 +59,7 @@ class _AudioPageState extends State<AudioPage> {
     });
   }
 
-  // ✅ defined as class method not inside initState
+  // defined as class method not inside initState
   void loadHijri() async {
     try {
       final result = await hijriService.getHijriDate();
@@ -77,6 +85,82 @@ class _AudioPageState extends State<AudioPage> {
     return "${two(m)}:${two(s)}";
   }
 
+  void loadDhikr() async {
+    try {
+      final result = await hijriService.getRandomDhikr();
+      if (!mounted) return;
+      setState(() => todayDhikr = result);
+    } catch (e) {
+      setState(() => todayDhikr = "Error loading dhikr");
+    }
+  }
+
+  void loadPrayerTimes() async {
+    try {
+      final result = await hijriService.getPrayerTimes();
+      if (!mounted) return;
+      setState(() => prayerTimes = result);
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  void showPrayerTimes() {
+    const rowColor = Color(0xFFF4EBE0);
+    const textColor = Color(0xFF5C3D1E);
+    const timeColor = Color(0xFF8B5E3C);
+    final ordered = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
+
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Prayer Times",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 18),
+              ...ordered.map((name) => Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                decoration: BoxDecoration(
+                  color: rowColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(name, style: const TextStyle(fontSize: 14, color: textColor)),
+                    Text(
+                      prayerTimes[name] ?? "--",
+                      style: const TextStyle(fontSize: 14, color: timeColor),
+                    ),
+                  ],
+                ),
+              )),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: rowColor,
+                  foregroundColor: timeColor,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Close"),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
@@ -93,14 +177,21 @@ class _AudioPageState extends State<AudioPage> {
               const SizedBox(height: 20),
 
               //  HEADER
-              Text(
-                "ASSALAMU ALAIKUM",
-                style: TextStyle(
-                  fontFamily: "PTSerif",
-                  fontSize: 15,
-                  color: primary,
-                  letterSpacing: 1.2,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    hijriDate,
+                    style: TextStyle(
+                      fontFamily: "PTSerif",
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: primary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+
+                ],
               ),
 
               const SizedBox(height: 20),
@@ -261,8 +352,46 @@ class _AudioPageState extends State<AudioPage> {
                   ],
                 ),
               ),
+
+              //dhikr card
               const SizedBox(height: 25),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF4EBE0),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Quranic Duas",
+                      style: TextStyle(
+                        fontFamily: "Amiri",
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: primary,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Text(
+                      todayDhikr,
+                      style: TextStyle(
+                        fontFamily: "Amiri",
+                        fontSize: 20,
+                        height: 1.9,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               //  EXPLORE TITLE
+              const SizedBox(height: 10),
               Text(
                 "Explore",
                 style: TextStyle(
@@ -281,66 +410,28 @@ class _AudioPageState extends State<AudioPage> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
+                  childAspectRatio: 1.35,
                   children: [
+                    _tile(context, "Surahs", Icons.menu_book, () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => SurahsGlobalPage()));
+                    }),
+
+                    _tile(context, "Reciters", Icons.mic, () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => RecitersPage()));
+                    }),
+
+                    _tile(context, "Favorites", Icons.favorite, () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => FavoritesPage()));
+                    }),
+
                     _tile(
                       context,
-                      "Surahs",
-                      Icons.menu_book,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => SurahsGlobalPage()),
-                      ),
-                    ),
-                    _tile(
-                      context,
-                      "Reciters",
-                      Icons.mic,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => RecitersPage()),
-                      ),
-                    ),
-                    _tile(
-                      context,
-                      "Favorites",
-                      Icons.favorite,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => FavoritesPage()),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () {},
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF4EBE0),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(Icons.calendar_month, color: accent),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              hijriDate,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: "PTSerif",
-                                fontSize: 11,
-                                color: primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      "Prayer Times",
+                      Icons.access_time,
+                      showPrayerTimes,
                     ),
                   ],
                 ),

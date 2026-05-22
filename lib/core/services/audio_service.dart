@@ -1,8 +1,7 @@
 import 'dart:ui';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
-import 'stats_service.dart';
-import '/../features/player/player_page.dart';
+import 'listening_service.dart';
 import 'last_played_service.dart';
 
 class AudioService {
@@ -13,7 +12,7 @@ class AudioService {
   AudioService._internal();
 
   final AudioPlayer _player = AudioPlayer();
-  final StatsService _statsService = StatsService();
+  final ListeningService _listeningService = ListeningService();
 
   String currentSurahName = "";
   String currentReciter = "";
@@ -32,11 +31,38 @@ class AudioService {
   }
 
   // ================= PLAYLIST =================
-  void setPlaylist(List<String> urls, int startIndex) {
+  Future<void> setPlaylist(List<String> urls, int startIndex) async {
+    await _listeningService.stopTracking();
+
     _playlist = urls;
     _index = startIndex;
 
-    _player.setUrl(_playlist[_index]); // load first track
+    await _player.setUrl(_playlist[_index]);
+
+    final last = await LastPlayedService.get();
+
+    if (last != null &&
+        last["index"] == _index &&
+        last["position"] != null) {
+      await _player.seek(
+        Duration(seconds: last["position"]),
+      );
+    }
+
+    await _player.play();
+
+    _listeningService.startTracking(
+      currentSurahName,
+      currentSurahNumber,
+    );
+
+    await LastPlayedService.save(
+      surah: currentSurahName,
+      reciter: currentReciter,
+      index: _index,
+      urls: _playlist,
+      position: 0,
+    );
   }
 
   int get currentIndex => _index;
@@ -47,18 +73,23 @@ class AudioService {
 
   Future<void> play() async {
     await _player.play();
+
+    _listeningService.startTracking(
+      currentSurahName,
+      currentSurahNumber,
+    );
   }
 
   Future<void> pause() async {
     await _player.pause();
-    await _statsService.stopTracking();
+    await _listeningService.stopTracking();
 
-    await LastPlayedService.updatePosition(_player.position.inSeconds);
+   // await LastPlayedService.updatePosition(_player.position.inSeconds);
   }
 
   Future<void> stop() async {
     await _player.stop();
-    await _statsService.stopTracking();
+    await _listeningService.stopTracking();
   }
 
   Future<void> seek(Duration position) async {
@@ -67,17 +98,35 @@ class AudioService {
 
   // ================= NEXT / PREV =================
   Future<void> next() async {
+    await _listeningService.stopTracking();
+
     if (_index < _playlist.length - 1) {
       _index++;
+
       await _player.setUrl(_playlist[_index]);
+
+      _listeningService.startTracking(
+        currentSurahName,
+        currentSurahNumber,
+      );
+
       await _player.play();
     }
   }
 
   Future<void> previous() async {
+    await _listeningService.stopTracking();
+
     if (_index > 0) {
       _index--;
+
       await _player.setUrl(_playlist[_index]);
+
+      _listeningService.startTracking(
+        currentSurahName,
+        currentSurahNumber,
+      );
+
       await _player.play();
     }
   }

@@ -7,7 +7,7 @@ class ListeningService {
 
   DateTime? _startTime;
   String? _currentSurah;
-  int? _currentSurahId;
+  int? _currentSurahId; //The value of the field '_currentSurahId' isn't used. (Documentation
 
   /// call when audio starts
   void startTracking(String surahName, int surahId) {
@@ -36,7 +36,7 @@ class ListeningService {
       final snapshot = await transaction.get(ref);
 
       final data = snapshot.data() ?? {};
-      final stats = data["listeningStats"] ?? {};
+      final stats = Map<String, dynamic>.from(data["listeningStats"] ?? {});
 
       final total = (stats["totalSeconds"] ?? 0) + seconds;
 
@@ -48,12 +48,15 @@ class ListeningService {
         top[_currentSurah!] = (top[_currentSurah!] ?? 0) + 1;
       }
 
+      // Preserve existing goalSeconds
+      final existingGoal = stats["goalSeconds"] ?? 72000;
+
       transaction.set(ref, {
         "listeningStats": {
           "totalSeconds": total,
           "daily": daily,
           "topSurahs": top,
-          "monthlyGoal": stats["monthlyGoal"] ?? 7200,
+          "goalSeconds": existingGoal, // Use goalSeconds consistently
         }
       }, SetOptions(merge: true));
     });

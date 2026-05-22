@@ -103,20 +103,30 @@ class SurahsPageState extends State<SurahsPage> {
                           subtitle: "${audio.titleAr} • ${audio.reciter}",
 
                           /// ▶ PLAY
-                          onTap: () async {
-                            audioService.setPlaylist(
-                              audios.map((e) => e.url).toList(),
-                              index,
-                            );
+                            onTap: () async {
+                              final audio = AudioService();
 
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    PlayerPage(playlist: audios, index: index),
-                              ),
-                            );
-                          },
+                              final selectedAudio = audios[index];
+
+                              //  SET METADATA FROM MODEL (NOT AudioService)
+                              audio.currentSurahName = selectedAudio.titleEn;
+                              audio.currentReciter = widget.reciter.nameEn;
+
+                              await audio.setPlaylist(
+                                audios.map((e) => e.url).toList(),
+                                index,
+                              );
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PlayerPage(
+                                    playlist: audios,
+                                    index: index,
+                                  ),
+                                ),
+                              );
+                            },
 
                           /// ❤️ FAVORITE ICON
                           trailing: StreamBuilder<bool>(
